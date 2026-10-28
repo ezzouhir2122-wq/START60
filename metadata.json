@@ -1,0 +1,6 @@
+{
+  "name": "START60 - AI Venture Builder",
+  "description": "Plateforme d'accélération IA : transforme n'importe quelle idée en startup prête à lancer en 60 minutes avec analyse de marché, modèle canvas, financier, MVP 7j, landing page, roadmap 90j et opportunités Coupe du Monde 2030.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
