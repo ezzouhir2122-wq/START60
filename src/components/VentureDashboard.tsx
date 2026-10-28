@@ -1,16 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import confetti from 'canvas-confetti';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { VentureProject } from '../types/venture';
-import { BusinessScoreModule } from './modules/BusinessScoreModule';
-import { BusinessModelModule } from './modules/BusinessModelModule';
-import { MarketAnalysisModule } from './modules/MarketAnalysisModule';
-import { FinancialModule } from './modules/FinancialModule';
-import { MvpModule } from './modules/MvpModule';
-import { BrandModule } from './modules/BrandModule';
-import { WebsiteModule } from './modules/WebsiteModule';
-import { MarketingModule } from './modules/MarketingModule';
-import { RoadmapModule } from './modules/RoadmapModule';
-import { WorldCupModule } from './modules/WorldCupModule';
 import {
   Trophy,
   CheckCircle2,
@@ -24,6 +13,42 @@ import {
   ArrowRight,
   TrendingUp,
 } from 'lucide-react';
+
+// Modules chargés à la demande (code-splitting) : chaque onglet ne télécharge
+// que le chunk nécessaire. Les composants sont des exports nommés, d'où le
+// mapping vers un `default` attendu par React.lazy.
+const BusinessScoreModule = lazy(() =>
+  import('./modules/BusinessScoreModule').then((m) => ({ default: m.BusinessScoreModule })),
+);
+const BusinessModelModule = lazy(() =>
+  import('./modules/BusinessModelModule').then((m) => ({ default: m.BusinessModelModule })),
+);
+const MarketAnalysisModule = lazy(() =>
+  import('./modules/MarketAnalysisModule').then((m) => ({ default: m.MarketAnalysisModule })),
+);
+const FinancialModule = lazy(() =>
+  import('./modules/FinancialModule').then((m) => ({ default: m.FinancialModule })),
+);
+const MvpModule = lazy(() => import('./modules/MvpModule').then((m) => ({ default: m.MvpModule })));
+const BrandModule = lazy(() =>
+  import('./modules/BrandModule').then((m) => ({ default: m.BrandModule })),
+);
+const WebsiteModule = lazy(() =>
+  import('./modules/WebsiteModule').then((m) => ({ default: m.WebsiteModule })),
+);
+const MarketingModule = lazy(() =>
+  import('./modules/MarketingModule').then((m) => ({ default: m.MarketingModule })),
+);
+const RoadmapModule = lazy(() =>
+  import('./modules/RoadmapModule').then((m) => ({ default: m.RoadmapModule })),
+);
+const WorldCupModule = lazy(() =>
+  import('./modules/WorldCupModule').then((m) => ({ default: m.WorldCupModule })),
+);
+
+const ModuleFallback: React.FC = () => (
+  <div className="animate-pulse rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-48" />
+);
 
 interface VentureDashboardProps {
   project: VentureProject;
@@ -54,19 +79,22 @@ export const VentureDashboard: React.FC<VentureDashboardProps> = ({
   onNewIdea,
   onOpenExport,
 }) => {
-  // Fire confetti once if decision is GO
+  // Fire confetti once if decision is GO (chargé dynamiquement pour alléger
+  // le bundle initial : canvas-confetti n'est téléchargé que si besoin).
   useEffect(() => {
     if (project.businessScore.decision === 'GO') {
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#F59E0B', '#10B981', '#3B82F6', '#EC4899'],
+      import('canvas-confetti')
+        .then(({ default: confetti }) => {
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#F59E0B', '#10B981', '#3B82F6', '#EC4899'],
+          });
+        })
+        .catch(() => {
+          // Safe confetti fallback
         });
-      } catch {
-        // Safe confetti fallback
-      }
     }
   }, [project.id]);
 
@@ -188,6 +216,7 @@ export const VentureDashboard: React.FC<VentureDashboardProps> = ({
       </div>
 
       {/* Active Tab Content Area */}
+      <Suspense fallback={<ModuleFallback />}>
       <div className="space-y-12">
         {/* If 'all' is selected, render all 10 modules sequentially with divider lines */}
         {(activeTab === 'all' || activeTab === 'score') && (
@@ -250,6 +279,7 @@ export const VentureDashboard: React.FC<VentureDashboardProps> = ({
           </section>
         )}
       </div>
+      </Suspense>
     </div>
   );
 };

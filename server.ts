@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import { ventureResponseSchema } from './src/types/ventureSchema';
 
 dotenv.config();
 
@@ -167,8 +168,30 @@ Rédige en français avec une précision et un réalisme percutant.`;
       return res.status(200).json({ fallback: true });
     }
 
+    // Parse + validation stricte de la structure renvoyée par l'IA.
     const parsed = JSON.parse(text);
-    return res.json(parsed);
+    const result = ventureResponseSchema.safeParse(parsed);
+    if (!result.success) {
+      console.error(
+        'Réponse Gemini structurellement invalide, fallback contextuel:',
+        result.error.issues.slice(0, 5),
+      );
+      return res.status(200).json({ fallback: true });
+    }
+
+    // Enrichissement des métadonnées (l'IA ne les fournit pas).
+    const project = {
+      ...result.data.project,
+      id: 'venture-' + Date.now(),
+      createdAt: new Date().toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+      ideaPrompt: prompt,
+    };
+
+    return res.json({ project });
   } catch (error) {
     console.error('Gemini generation error, falling back:', error);
     return res.status(200).json({ fallback: true });

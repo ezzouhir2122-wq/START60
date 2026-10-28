@@ -3,15 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { VentureProject } from './types/venture';
 import { generateVenture, generateContextualVenture } from './services/ventureGenerator';
 import { Header } from './components/Header';
 import { IdeaInputSection } from './components/IdeaInputSection';
 import { IncubatorLoading } from './components/IncubatorLoading';
 import { VentureDashboard } from './components/VentureDashboard';
-import { ExportModal } from './components/ExportModal';
-import { HistoryModal } from './components/HistoryModal';
+
+// Modales chargées à la demande (code-splitting) : hors du bundle initial.
+const ExportModal = lazy(() =>
+  import('./components/ExportModal').then((m) => ({ default: m.ExportModal })),
+);
+const HistoryModal = lazy(() =>
+  import('./components/HistoryModal').then((m) => ({ default: m.HistoryModal })),
+);
 import {
   saveVenture,
   listVentures,
@@ -153,21 +159,22 @@ export default function App() {
         )}
       </main>
 
-      {/* Export Modal */}
-      {isExportOpen && currentProject && (
-        <ExportModal project={currentProject} onClose={() => setIsExportOpen(false)} />
-      )}
+      {/* Modales (chargées à la demande) */}
+      <Suspense fallback={null}>
+        {isExportOpen && currentProject && (
+          <ExportModal project={currentProject} onClose={() => setIsExportOpen(false)} />
+        )}
 
-      {/* History Modal */}
-      {isHistoryOpen && (
-        <HistoryModal
-          items={history}
-          loading={historyLoading}
-          onClose={() => setIsHistoryOpen(false)}
-          onLoad={handleLoadVenture}
-          onDelete={handleDeleteVenture}
-        />
-      )}
+        {isHistoryOpen && (
+          <HistoryModal
+            items={history}
+            loading={historyLoading}
+            onClose={() => setIsHistoryOpen(false)}
+            onLoad={handleLoadVenture}
+            onDelete={handleDeleteVenture}
+          />
+        )}
+      </Suspense>
 
       {/* Footer */}
       <footer className="border-t border-slate-200 dark:border-slate-900 py-8 px-4 text-center text-xs text-slate-500 dark:text-slate-500 bg-white dark:bg-slate-950">
