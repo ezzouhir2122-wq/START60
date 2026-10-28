@@ -1,11 +1,13 @@
 import React from 'react';
-import { Sun, Moon, Sparkles, RefreshCw, FileText } from 'lucide-react';
+import { Sun, Moon, Sparkles, RefreshCw, FileText, History } from 'lucide-react';
 
 interface HeaderProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
   onNewIdea: () => void;
   onOpenExport?: () => void;
+  onOpenHistory?: () => void;
+  historyCount?: number;
   hasActiveProject: boolean;
   activeTab: string;
   onSelectTab: (tabId: string) => void;
@@ -16,6 +18,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleDarkMode,
   onNewIdea,
   onOpenExport,
+  onOpenHistory,
+  historyCount = 0,
   hasActiveProject,
   activeTab,
   onSelectTab,
@@ -103,6 +107,22 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Zone 3: Actions */}
         <div className="flex items-center gap-2.5 shrink-0">
+          {onOpenHistory && (
+            <button
+              onClick={onOpenHistory}
+              className="relative inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 dark:text-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
+              title="Historique des dossiers sauvegardés"
+            >
+              <History className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Historique</span>
+              {historyCount > 0 && (
+                <span className="ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                  {historyCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {hasActiveProject && onOpenExport && (
             <button
               onClick={onOpenExport}

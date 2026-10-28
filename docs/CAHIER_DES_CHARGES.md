@@ -175,7 +175,8 @@ Le déploiement Vercel est déclenché automatiquement à chaque `push` sur la b
 
 ## 9. Évolutions futures (backlog)
 
-- [ ] Authentification utilisateur et sauvegarde des projets.
+- [x] **Persistance des projets (Supabase)** — sauvegarde automatique de chaque dossier généré + historique consultable/rechargeable (accès partagé via clé anon). Table `ventures` (voir `supabase/migrations/0001_create_ventures.sql`).
+- [ ] Authentification utilisateur (associer les dossiers à un compte).
 - [ ] Historique multi-projets par compte.
 - [ ] Export PDF du dossier d'incubation.
 - [ ] Multilingue (ar / en).

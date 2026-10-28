@@ -11,6 +11,15 @@ import { IdeaInputSection } from './components/IdeaInputSection';
 import { IncubatorLoading } from './components/IncubatorLoading';
 import { VentureDashboard } from './components/VentureDashboard';
 import { ExportModal } from './components/ExportModal';
+import { HistoryModal } from './components/HistoryModal';
+import {
+  saveVenture,
+  listVentures,
+  getVenture,
+  deleteVenture,
+  isSupabaseConfigured,
+  type StoredVentureSummary,
+} from './services/ventureStore';
 
 export default function App() {
   const [darkMode, setDarkMode] = useState<boolean>(() => {
@@ -30,6 +39,25 @@ export default function App() {
   const [loadingPrompt, setLoadingPrompt] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [history, setHistory] = useState<StoredVentureSummary[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const refreshHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      setHistory(await listVentures());
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  // Charge l'historique au démarrage si Supabase est configuré.
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      void refreshHistory();
+    }
+  }, []);
 
   useEffect(() => {
     if (darkMode) {
@@ -50,23 +78,47 @@ export default function App() {
     setLoadingPrompt(prompt);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
+    let project: VentureProject;
     try {
-      const project = await generateVenture(prompt);
-      setCurrentProject(project);
-      setActiveTab('all');
+      project = await generateVenture(prompt);
     } catch (err) {
       console.error('Error generating venture:', err);
-      const fallbackProject = generateContextualVenture(prompt);
-      setCurrentProject(fallbackProject);
-      setActiveTab('all');
-    } finally {
-      setIsLoading(false);
+      project = generateContextualVenture(prompt);
     }
+
+    setCurrentProject(project);
+    setActiveTab('all');
+    setIsLoading(false);
+
+    // Sauvegarde automatique dans Supabase (no-op si non configuré).
+    void saveVenture(project).then((id) => {
+      if (id) void refreshHistory();
+    });
   };
 
   const handleNewIdea = () => {
     setCurrentProject(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenHistory = () => {
+    setIsHistoryOpen(true);
+    void refreshHistory();
+  };
+
+  const handleLoadVenture = async (id: string) => {
+    const project = await getVenture(id);
+    if (project) {
+      setCurrentProject(project);
+      setActiveTab('all');
+      setIsHistoryOpen(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleDeleteVenture = async (id: string) => {
+    const ok = await deleteVenture(id);
+    if (ok) void refreshHistory();
   };
 
   return (
@@ -77,6 +129,8 @@ export default function App() {
         onToggleDarkMode={handleToggleDarkMode}
         onNewIdea={handleNewIdea}
         onOpenExport={currentProject ? () => setIsExportOpen(true) : undefined}
+        onOpenHistory={isSupabaseConfigured ? handleOpenHistory : undefined}
+        historyCount={history.length}
         hasActiveProject={Boolean(currentProject)}
         activeTab={activeTab}
         onSelectTab={setActiveTab}
@@ -102,6 +156,17 @@ export default function App() {
       {/* Export Modal */}
       {isExportOpen && currentProject && (
         <ExportModal project={currentProject} onClose={() => setIsExportOpen(false)} />
+      )}
+
+      {/* History Modal */}
+      {isHistoryOpen && (
+        <HistoryModal
+          items={history}
+          loading={historyLoading}
+          onClose={() => setIsHistoryOpen(false)}
+          onLoad={handleLoadVenture}
+          onDelete={handleDeleteVenture}
+        />
       )}
 
       {/* Footer */}
